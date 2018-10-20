@@ -13,6 +13,7 @@ class ViewController: UITableViewController {
     
     var allWords = [String]()
     var usedWords = [String]()
+    var wordPointer = 0
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -25,15 +26,21 @@ class ViewController: UITableViewController {
             }
         }
         
-        startGame()
+        if let shuffledWords = GKRandomSource.sharedRandom().arrayByShufflingObjects(in: allWords) as? [String] {
+            allWords = shuffledWords
+            startGame()
+        }
     }
 
     func startGame() {
-        if let allWords = GKRandomSource.sharedRandom().arrayByShufflingObjects(in: allWords) as? [String] {
-            title = allWords[0]
+            title = allWords[wordPointer]
+        if wordPointer < allWords.count {
+            wordPointer += 1
+        } else {
+            wordPointer = 0
+        }
             usedWords.removeAll()
             tableView.reloadData()
-        }
     }
     
     /// MARK: - TableView Datasource Methods
@@ -64,31 +71,40 @@ class ViewController: UITableViewController {
     func submit(answer: String) {
         let lowerAnswer = answer.lowercased()
         
-        let wordError: WordCheckError
-        
-        if isPossible(word: lowerAnswer) {
-            if isOriginal(word: lowerAnswer) {
-                if isReal(word: lowerAnswer) {
-                    usedWords.insert(answer, at: 0)
-                    
-                    let indexPath = IndexPath(row: 0, section: 0)
-                    tableView.insertRows(at: [indexPath], with: .automatic)
-                    
-                    return
-                } else {
-                    wordError = .notReal
-                }
-            } else {
-                wordError = .notOriginal
-            }
-        } else {
-            wordError = .notPossible
+        guard isPossible(word: lowerAnswer) else {
+            showErrorMessage(forError: .notPossible)
+            return
         }
         
-        let ac = UIAlertController(title: wordError.title, message: wordError.message, preferredStyle: .alert)
-        ac.addAction(UIAlertAction(title: "OK", style: .default))
-        present(ac,animated: true)
+        guard isOriginal(word: lowerAnswer) else {
+            showErrorMessage(forError: .notOriginal)
+            return
+        }
+        
+        guard isLongEnough(word: lowerAnswer) else {
+            showErrorMessage(forError: .notLongEnough)
+            return
+        }
+        
+        guard isReal(word: lowerAnswer)  else {
+            showErrorMessage(forError: .notReal)
+            return
+        }
+        
+        guard isNotSame(word: lowerAnswer) else {
+            showErrorMessage(forError: .sameWord)
+            return
+        }
+        
+        usedWords.insert(answer, at: 0)
+        
+        let indexPath = IndexPath(row: 0, section: 0)
+        tableView.insertRows(at: [indexPath], with: .automatic)
     }
+}
+
+//MARK: - Helper Methods
+extension ViewController {
     
     func isPossible(word: String) -> Bool { //Can be made from the letters of the shown word
         var titleWord = title!.lowercased()
@@ -116,5 +132,17 @@ class ViewController: UITableViewController {
         return misspelledRange.location == NSNotFound
     }
     
+    func isLongEnough(word: String) -> Bool { //Is at least 3 letters long
+        return word.count >= 3
+    }
+    
+    func isNotSame(word: String) -> Bool { //Is not the same as the word in the title
+        return word != title!.lowercased()
+    }
+    
+    func showErrorMessage(forError wordError: WordCheckError) {
+        let ac = UIAlertController(title: wordError.title, message: wordError.message, preferredStyle: .alert)
+        ac.addAction(UIAlertAction(title: "OK", style: .default))
+        present(ac,animated: true)
+    }
 }
-

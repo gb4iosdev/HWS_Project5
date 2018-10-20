@@ -12,6 +12,8 @@ enum WordCheckError: String {
     case notPossible
     case notOriginal
     case notReal
+    case notLongEnough
+    case sameWord
 }
 
 extension WordCheckError {
@@ -21,6 +23,8 @@ extension WordCheckError {
         case .notPossible: return "Word not possible"
         case .notOriginal: return "Word used already"
         case .notReal: return "Word not recognized"
+        case .notLongEnough: return "Word not long enough"
+        case .sameWord: return "Word cannot be identical"
         }
     }
     
@@ -29,6 +33,8 @@ extension WordCheckError {
         case .notPossible: return "You can't spell that word from the letters above"
         case .notOriginal: return "Word used already"
         case .notReal: return "Word not recognized in english"
+        case .notLongEnough: return "Word must be at least 3 letters long"
+        case .sameWord: return "Word must be a subset of the word above"
         }
     }
 }
